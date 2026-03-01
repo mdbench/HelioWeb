@@ -376,22 +376,30 @@
         // Import folder handler
         const importFolder = async () => {
             try {
-                const dirHandle = await window.showDirectoryPicker();
-                const db = await openDB();
-                
-                // Check if we've imported this folder before
-                const tx = db.transaction(folderStore, 'readwrite');
-                const folderStoreTx = tx.objectStore(folderStore);
-                const folderRequest = folderStoreTx.get(dirHandle.name);
-                
-                folderRequest.onsuccess = async () => {
-                    const folderExists = !!folderRequest.result;
-                    const reimport = folderExists ? confirm(`Re-import "${dirHandle.name}"? This will update existing images and remove deleted ones.`) : true;
-                    
-                    if (reimport) {
-                        await processFolder(dirHandle, db, folderExists);
+                if ('showDirectoryPicker' in window) {
+                    try {
+                        const dirHandle = await window.showDirectoryPicker();
+                        const db = await openDB();
+                        
+                        // Check if we've imported this folder before
+                        const tx = db.transaction(folderStore, 'readwrite');
+                        const folderStoreTx = tx.objectStore(folderStore);
+                        const folderRequest = folderStoreTx.get(dirHandle.name);
+                        
+                        folderRequest.onsuccess = async () => {
+                            const folderExists = !!folderRequest.result;
+                            const reimport = folderExists ? confirm(`Re-import "${dirHandle.name}"? This will update existing images and remove deleted ones.`) : true;
+                            
+                            if (reimport) {
+                                await processFolder(dirHandle, db, folderExists);
+                            }
+                        };
+                    } catch (err) {
+                        console.error(err);
                     }
-                };
+                } else {
+                    alert('HelioWeb is not compatible with this browser. Try Chrome or Edge instead.');
+                }
             } catch (error) {
                 console.error("Error importing folder:", error);
             }
